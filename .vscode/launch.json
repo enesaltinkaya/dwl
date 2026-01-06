@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run",
+            "type": "f5anything",
+            "request": "launch",
+            "command": "${workspaceFolder}/scripts/run.sh",
+        },
+        {
+            "name": "Debug",
+            "type": "cppdbg",
+            "cwd": "${workspaceFolder}",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/build/dwl",
+        },
+        {
+            "name": "Renderdoc",
+            "type": "f5anything",
+            "request": "launch",
+            "command": "${workspaceFolder}/scripts/run.sh renderdoc",
+        },
+    ]
+}

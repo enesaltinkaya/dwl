@@ -1,0 +1,14 @@
+{
+  "Lua.diagnostics.globals": [
+    "creditsKeyDown",
+    "rmlui",
+    "creditsClose",
+    "settingsClose",
+    "settingsKeyDown",
+    "videoClose",
+    "videoSettingsKeyDown",
+    "fpsLimitClick",
+    "audioSettingsKeyDown",
+    "audioSettingsClose"
+  ]
+}

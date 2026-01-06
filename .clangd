@@ -1,0 +1,26 @@
+---
+CompileFlags:
+  CompilationDatabase: ./build
+  Add: 
+    - "-Wno-unused-const-variable"
+    - "-Wno-unused-macros"
+    - "-Wno-unused-variable"
+  
+  
+InlayHints:
+  Enabled: No
+  Designators: No
+  ParameterNames: No
+  DeducedTypes: No
+  
+Diagnostics:
+  UnusedIncludes: Strict
+  ClangTidy:
+    FastCheckFilter: None
+    Add: 
+      - "clang-analyzer-*"
+      - "bugprone-*"
+      - "performance-*"
+    Remove:
+      - "bugprone-easily-swappable-parameters"
+      - "bugprone-assignment-in-if-condition"

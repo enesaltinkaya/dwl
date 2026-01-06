@@ -1,4 +1,6 @@
 /* Taken from https://github.com/djpohly/dwl/issues/466 */
+#include "wlr/util/log.h"
+#include "dwl.h"
 #define COLOR(hex)    { ((hex >> 24) & 0xFF) / 255.0f, \
                         ((hex >> 16) & 0xFF) / 255.0f, \
                         ((hex >> 8) & 0xFF) / 255.0f, \

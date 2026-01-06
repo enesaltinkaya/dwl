@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
-project(dwl VERSION 0.8)
+set(CMAKE_C_COMPILER clang)
+set(CMAKE_C_STANDARD 23)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1) # for clangd
+set(PROJECT_NAME dwl)
+
+
+# -Wunused-const-variable
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1) # for clangd
+project(${PROJECT_NAME} C)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color -Wall -Wextra -Wpedantic -pedantic-errors")
 
 # --- Dependencies ---
 find_package(PkgConfig REQUIRED)
@@ -13,7 +23,7 @@ pkg_check_modules(LIBINPUT REQUIRED libinput)
 pkg_check_modules(WLR REQUIRED wlroots-0.19)
 
 # XWayland (optional)
-option(ENABLE_XWAYLAND "Enable XWayland support" OFF)
+option(ENABLE_XWAYLAND "Enable XWayland support" ON)
 if(ENABLE_XWAYLAND)
     pkg_check_modules(XCB REQUIRED xcb)
     pkg_check_modules(XCB_ICCCM REQUIRED xcb-icccm)
@@ -26,11 +36,6 @@ find_program(WAYLAND_SCANNER NAMES wayland-scanner REQUIRED)
 
 # --- Configuration Header ---
 set(CONFIG_HEADER ${CMAKE_CURRENT_BINARY_DIR}/src/config.h)
-set(CONFIG_HEADER_DEFAULT ${CMAKE_CURRENT_SOURCE_DIR}/src/config.def.h)
-if(NOT EXISTS ${CONFIG_HEADER})
-    message(STATUS "Copying ${CONFIG_HEADER_DEFAULT} to ${CONFIG_HEADER}")
-    file(COPY ${CONFIG_HEADER_DEFAULT} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/src)
-endif()
 
 # --- Protocol Header Generation ---
 set(PROTOCOLS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/protocols)
@@ -74,10 +79,10 @@ set(GENERATED_HEADERS
 )
 
 # --- Executable ---
-add_executable(dwl src/dwl.c src/util.c ${GENERATED_HEADERS})
+add_executable(${PROJECT_NAME} src/dwl.c src/util.c ${GENERATED_HEADERS})
 
 # --- Include Directories ---
-target_include_directories(dwl PRIVATE
+target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${GENERATED_HEADERS_DIR}
     ${WAYLAND_INCLUDE_DIRS}
@@ -86,11 +91,12 @@ target_include_directories(dwl PRIVATE
     ${WLR_INCLUDE_DIRS}
 )
 if(ENABLE_XWAYLAND)
-    target_include_directories(dwl PRIVATE
+    target_include_directories(${PROJECT_NAME} PRIVATE
         ${XCB_INCLUDE_DIRS}
         ${XCB_ICCCM_INCLUDE_DIRS}
     )
 endif()
+
 
 
 # --- Compiler Flags ---
@@ -106,16 +112,17 @@ if(NOT GIT_VERSION)
     set(GIT_VERSION ${project_VERSION})
 endif()
 
-target_compile_definitions(dwl PRIVATE
+target_compile_definitions(${PROJECT_NAME} PRIVATE
     -D_POSIX_C_SOURCE=200809L
     -DWLR_USE_UNSTABLE
     -DVERSION="${GIT_VERSION}"
 )
-target_compile_options(dwl PRIVATE
+target_compile_options(${PROJECT_NAME} PRIVATE
     -Wpedantic
     -Wall
     -Wextra
     -Wno-unused-parameter
+    -W-no-unused-const-variable
     -Wshadow
     -Wunused-macros
     -Werror=strict-prototypes
@@ -125,23 +132,64 @@ target_compile_options(dwl PRIVATE
     -Wfloat-conversion
 )
 
+if (WIN32)
+    set(dir "build-win")
+elseif (LINUX)
+    set(dir "build-linux")
+endif ()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(tag "release")
+else ()
+    set(tag "debug")
+endif ()
+
+
+set(thirdparty "/home/enes/project/c/cpp-thirdparty")
+target_include_directories(${PROJECT_NAME} PUBLIC ${thirdparty}/c-utils/c-utils/src)
+target_precompile_headers(${PROJECT_NAME} PUBLIC "${thirdparty}/c-utils/c-utils/src/Defines.h")
+target_precompile_headers(${PROJECT_NAME} PUBLIC "${thirdparty}/c-utils/c-utils/src/logger/Logger.h")
+
+
 # --- Link Libraries ---
-target_link_libraries(dwl PRIVATE
+target_link_libraries(${PROJECT_NAME} PRIVATE
     ${WAYLAND_LIBRARIES}
     ${XKBCOMMON_LIBRARIES}
     ${LIBINPUT_LIBRARIES}
     ${WLR_LIBRARIES}
     m
+    ${thirdparty}/c-utils/c-utils/${dir}/libc-utils-${tag}.a
+
+    #zip
+    ${thirdparty}/libzip/git/${dir}/lib/libzip.a
+    ${thirdparty}/bzip2/git/${dir}/libbz2_static.a
+    ${thirdparty}/zlib/git/${dir}/libzs.a
+    ${thirdparty}/zstd/git/${dir}/lib/libzstd.a
+
+
+    #tools
+    ${thirdparty}/stb/git/${dir}/libstb.a
+    ${thirdparty}/lua/git/${dir}/liblua.a
+    ${thirdparty}/jansson/git/${dir}/lib/libjansson.a
+    ${thirdparty}/thpool/${dir}/libthpool.a
+    ${thirdparty}/sqlite/git/${dir}/libsqlite3.a
+    ${thirdparty}/buddy_alloc/git/${dir}/libbuddy_alloc.a
+    ${thirdparty}/freetype/git/${dir}/libfreetype.a
+    ${thirdparty}/harfbuzz/git/${dir}/libharfbuzz.a
+    ${thirdparty}/png/git/${dir}/libpng.a
+    ${thirdparty}/brotli/git/${dir}/libbrotlidec.a
+    ${thirdparty}/brotli/git/${dir}/libbrotlicommon.a
+
 )
 if(ENABLE_XWAYLAND)
-    target_link_libraries(dwl PRIVATE
+    target_link_libraries(${PROJECT_NAME} PRIVATE
         ${XCB_LIBRARIES}
         ${XCB_ICCCM_LIBRARIES}
     )
 endif()
 
 # --- Installation ---
-install(TARGETS dwl DESTINATION bin)
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 install(FILES src/dwl.1 DESTINATION share/man/man1)
 install(FILES src/dwl.desktop DESTINATION share/wayland-sessions)
 
